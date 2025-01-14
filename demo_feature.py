@@ -1,24 +1,38 @@
-#  python demo3.py --model_name MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric
 import time
+import argparse
+
+import numpy as np
+import torch
+import torchvision.transforms.functional
+from matplotlib import pyplot as pl
+
 from mast3r.model import AsymmetricMASt3R
 from mast3r.fast_nn import fast_reciprocal_NNs
 from dust3r.inference import inference
 from dust3r.utils.image import load_images
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Demo for feature matching.")
+    parser.add_argument('--model_name', type=str, required=False, help='Name or path of the pretrained model')
+    parser.add_argument('--capture_path', type=str, required=False, help='Path to the directory containing the captured images')
+    args = parser.parse_args()
+
     device = 'cuda'
     schedule = 'cosine'
     lr = 0.01
     niter = 300
 
-    model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
+    dir_path = "/home/fai/workspace/104/vco_vol/log/capture/2025_01_13_11_27_38_872" if args.capture_path is None else args.capture_path
+    model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric" if args.model_name is None else args.model_name
     # you can put the path to a local checkpoint in model_name if needed
     start_time = time.time()
     model = AsymmetricMASt3R.from_pretrained(model_name).to(device)
     print ("load : ", time.time() - start_time)
 
-    images = load_images(["/home/jhna/git/accelerated_features/samples/images/LW_L3.png", "/home/jhna/git/accelerated_features/samples/images/TL_L0.png"], size=512)
-    # images = load_images(["/home/jhna/git/accelerated_features/samples/images/TB_L5.png", "/home/jhna/git/accelerated_features/samples/images/TF_L4.png"], size=512)
+    capture_str = dir_path.split("/")[-1]
+    images_paths = [f"{dir_path}/{capture_str}_LW_L.png", f"{dir_path}/{capture_str}_TL_L.png"]
+
+    images = load_images(images_paths, size=512)
 
     start_time = time.time()
     output = inference([tuple(images)], model, device, batch_size=1, verbose=False)
@@ -45,13 +59,8 @@ if __name__ == '__main__':
     valid_matches = valid_matches_im0 & valid_matches_im1
     matches_im0, matches_im1 = matches_im0[valid_matches], matches_im1[valid_matches]
 
-    # visualize a few matches
-    import numpy as np
-    import torch
-    import torchvision.transforms.functional
-    from matplotlib import pyplot as pl
-
-    n_viz = 10000
+    # Visualize selected matches
+    n_viz = 2000
     num_matches = matches_im0.shape[0]
     print("num_matches : ", num_matches)
     match_idx_to_viz = np.round(np.linspace(0, num_matches - 1, n_viz)).astype(int)
@@ -75,4 +84,10 @@ if __name__ == '__main__':
     for i in range(n_viz):
         (x0, y0), (x1, y1) = viz_matches_im0[i].T, viz_matches_im1[i].T
         pl.plot([x0, x1 + W0], [y0, y1], '+', color=cmap(i / (n_viz - 1)), scalex=False, scaley=False)
+
+    # Save the visualization
+    output_path = "output/matches.jpg"
+    pl.savefig(output_path, format='jpg', dpi=300)  # Save the figure with high resolution
+    print(f"Saved matches visualization to {output_path}")
+
     pl.show(block=True)
