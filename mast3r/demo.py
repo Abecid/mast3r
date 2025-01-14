@@ -157,6 +157,7 @@ def get_reconstructed_scene(outdir, gradio_delete_cache, model, device, silent, 
         scene_graph_params.append(str(refid))
     if scenegraph_type in ["swin", "logwin"] and not win_cyclic:
         scene_graph_params.append('noncyclic')
+
     scene_graph = '-'.join(scene_graph_params)
     pairs = make_pairs(imgs, scene_graph=scene_graph, prefilter=None, symmetrize=True)
     if optim_level == 'coarse':

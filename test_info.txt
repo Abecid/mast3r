@@ -1,0 +1,12 @@
+- gradio-based
+python demo.py --weights checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth
+
+- remve gradio dependency, add open3d
+267줄 filelist에 입력 영상 변경 후
+python demo_recon.py --weights checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth
+reconstruction 결과 파일 : temp.glb (glb viewer는 free viewer 사용)
+
+- feature matching only
+20줄 load_images 함수에 입력 영상 변경 후
+python demo_feature.py --model_name MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric
+
